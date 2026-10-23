@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "다시 확인";
 
 "historyFilePreviewUnavailable" = "이 파일을 미리 볼 수 없음";
+
+// Pinned image context menu
+"pinShowShadow" = "그림자 표시";
+"pinResetZoom" = "초기 크기로 복원";
+"pinExportDragHint" = "Option 키를 누른 채 드래그하여 이미지 내보내기";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "작게";
+"sizeMedium" = "중간";
+"sizeLarge" = "크게";
+"toolbarIconSizeTitle" = "아이콘 크기";
+"toolbarDensityTitle" = "도구 막대 배치 크기";
+"toolbarSizeHint" = "아이콘과 간격을 개별 조절하며 다음 캡처부터 적용";
+"colorPaletteTitle" = "색상표 및 색상 선택 설정";
+"colorCopyFormat" = "색상 복사 형식";
+"colorPaletteHint" = "색상을 클릭하여 복사하고 별표로 즐겨찾기 관리";
+"colorFavoritesTitle" = "즐겨찾는 색상";
+"colorFavoritesEmpty" = "최근 색상의 별표를 눌러 추가";
+"colorRecentTitle" = "최근 색상";
+"colorRecentEmpty" = "기록에 저장한 색상을 여기에 표시";
+"colorCopyAction" = "색상 복사";
+"colorAddFavorite" = "색상 즐겨찾기";
+"colorRemoveFavorite" = "색상 즐겨찾기 해제";
+"pinRestoreInteraction" = "고정 이미지 마우스 조작 복원";
+"pinRecoveryUnavailable" = "복원 단축키가 사용 중이므로 이미지 조작 유지";
+"pinRecoveryHint" = "마우스 통과 활성화, ⌃⌥⌘P 키로 조작 복원";
+"pinInteractionRestored" = "고정 이미지 마우스 조작 복원됨";
+"pinOpacity" = "불투명도";
+"pinMoreOpaque" = "불투명도 높이기";
+"pinLessOpaque" = "불투명도 낮추기";
+"pinMousePassthrough" = "마우스 통과";
+"colorPickerControls" = "방향키로 한 픽셀 이동 · Return/Enter 확정 · Esc 취소";

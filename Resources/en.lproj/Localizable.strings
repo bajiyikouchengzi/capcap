@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "Check again";
 
 "historyFilePreviewUnavailable" = "Preview unavailable for this file";
+
+// Pinned image context menu
+"pinShowShadow" = "Show Shadow";
+"pinResetZoom" = "Reset to Initial Size";
+"pinExportDragHint" = "Hold Option and drag to export the image";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "Small";
+"sizeMedium" = "Medium";
+"sizeLarge" = "Large";
+"toolbarIconSizeTitle" = "Icon size";
+"toolbarDensityTitle" = "Toolbar layout size";
+"toolbarSizeHint" = "Applies to the next capture with independent icon and spacing sizes";
+"colorPaletteTitle" = "Palette and Color Picker";
+"colorCopyFormat" = "Color copy format";
+"colorPaletteHint" = "Click a color to copy it or use its star to manage favorites";
+"colorFavoritesTitle" = "Favorite colors";
+"colorFavoritesEmpty" = "No favorites yet, star a recent color to add it";
+"colorRecentTitle" = "Recent colors";
+"colorRecentEmpty" = "Picked colors from history appear here";
+"colorCopyAction" = "Copy color";
+"colorAddFavorite" = "Favorite color";
+"colorRemoveFavorite" = "Remove favorite color";
+"pinRestoreInteraction" = "Restore Pin Mouse Interaction";
+"pinRecoveryUnavailable" = "Recovery shortcut is in use, the pin remains interactive";
+"pinRecoveryHint" = "Mouse passthrough enabled, press ⌃⌥⌘P to restore interaction";
+"pinInteractionRestored" = "Pin mouse interaction restored";
+"pinOpacity" = "Opacity";
+"pinMoreOpaque" = "Increase opacity";
+"pinLessOpaque" = "Decrease opacity";
+"pinMousePassthrough" = "Mouse passthrough";
+"colorPickerControls" = "Arrow keys move one pixel · Return/Enter confirms · Esc cancels";

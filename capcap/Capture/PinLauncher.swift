@@ -384,6 +384,28 @@ final class PinWindowManager {
 
     func remove(_ window: NSWindow) {
         windows.removeAll { $0 === window }
+        if !windows.contains(where: \.ignoresMouseEvents) { HotkeyManager.shared.unregisterPinRecovery() }
+    }
+
+    func enableMousePassthrough(for window: NSWindow) {
+        guard HotkeyManager.shared.registerPinRecovery() else {
+            ToastWindow.show(message: L10n.pinRecoveryUnavailable)
+            return
+        }
+        window.ignoresMouseEvents = true
+        window.resignKey()
+        ToastWindow.show(message: L10n.pinRecoveryHint)
+    }
+
+    func restoreMouseInteraction() {
+        let affected = windows.filter(\.ignoresMouseEvents)
+        affected.forEach { $0.ignoresMouseEvents = false }
+        HotkeyManager.shared.unregisterPinRecovery()
+        if let last = affected.last {
+            NSApp.activate(ignoringOtherApps: true)
+            last.makeKeyAndOrderFront(nil)
+            ToastWindow.show(message: L10n.pinInteractionRestored)
+        }
     }
 }
 
@@ -942,7 +964,7 @@ private final class TextPinDisplayTextView: NSTextView {
     }
 }
 
-// MARK: - Pin Content View (zoomable image with floating controls)
+// MARK: - Pin Content View (zoomable image with context menu and corner resizing)
 
 private enum PinZoom {
     static let minScale: CGFloat = 0.25
@@ -952,8 +974,6 @@ private enum PinZoom {
     static let windowAnimationFrameInterval: TimeInterval = 1.0 / 60.0
     static let interactivePreviewMaxPixelDimension = 1280
     static let interactivePreviewEndDelay: TimeInterval = 0.1
-    static let toolbarAnimationDuration: TimeInterval = 0.16
-    static let toolbarHoverDuration: TimeInterval = 2.0
 }
 
 enum PinImageLayout {
@@ -1236,11 +1256,9 @@ final class PinContentView: NSView, NSDraggingSource {
     weak var pinWindow: PinWindow?
 
     private let baseImageSize: NSSize
-    private let toolbar = PinToolbarView()
     private let ocrOverlay: OCRLineSelectionOverlayView
     private var zoomScale: CGFloat = 1.0 {
         didSet {
-            toolbar.zoomScale = zoomScale
             needsDisplay = true
         }
     }
@@ -1255,7 +1273,6 @@ final class PinContentView: NSView, NSDraggingSource {
             guard isZoomingInteractively != oldValue else { return }
             refreshOCROverlayVisibility()
             needsDisplay = true
-            refreshToolbarVisibility(animated: true)
         }
     }
     private var isWindowAnimating = false {
@@ -1263,7 +1280,6 @@ final class PinContentView: NSView, NSDraggingSource {
             guard isWindowAnimating != oldValue else { return }
             refreshOCROverlayVisibility()
             needsDisplay = true
-            refreshToolbarVisibility(animated: true)
         }
     }
     private var usesLowResolutionPreview: Bool {
@@ -1271,13 +1287,20 @@ final class PinContentView: NSView, NSDraggingSource {
     }
     private var normalizedImageContentRect = PinImageLayout.fullNormalizedContentRect
     private var dragTemporaryFileURLs: [ObjectIdentifier: URL] = [:]
-    private var imageTrackingArea: NSTrackingArea?
-    private var isToolbarVisible = false
-    private var toolbarAutoHideTimer: Timer?
-    private var toolbarIsSuppressedAfterAutoHide = false
+    private struct CornerDrag {
+        let corner: NSPoint
+        let initialFrame: NSRect
+        let startPoint: NSPoint
+        let initialScale: CGFloat
+    }
+    private var cornerDrag: CornerDrag?
+    private var exportDragStart: NSPoint?
+    private static let resizeCursors: [NSCursor] = [
+        makeResizeCursor(symbol: "arrow.up.right.and.arrow.down.left"),
+        makeResizeCursor(symbol: "arrow.up.left.and.arrow.down.right")
+    ]
     private var isOCRSelectionEnabled = false {
         didSet {
-            toolbar.isOCRActive = isOCRSelectionEnabled
             refreshOCROverlayVisibility()
         }
     }
@@ -1293,7 +1316,6 @@ final class PinContentView: NSView, NSDraggingSource {
         ocrOverlay = OCRLineSelectionOverlayView(imageSize: frame.size)
         super.init(frame: frame)
         setupOCROverlay()
-        setupToolbar()
     }
 
     required init?(coder: NSCoder) {
@@ -1303,7 +1325,6 @@ final class PinContentView: NSView, NSDraggingSource {
     deinit {
         interactiveZoomEndTimer?.invalidate()
         windowAnimationTimer?.invalidate()
-        toolbarAutoHideTimer?.invalidate()
         ocrRecognitionTask?.cancel()
     }
 
@@ -1325,39 +1346,85 @@ final class PinContentView: NSView, NSDraggingSource {
         addSubview(ocrOverlay)
     }
 
-    private func setupToolbar() {
-        toolbar.alphaValue = 0
-        toolbar.isHidden = true
-
-        toolbar.onEdit = { [weak self] in
-            self?.editPinnedImage()
+    override func menu(for event: NSEvent) -> NSMenu? {
+        finishInteractiveZoom()
+        finishWindowAnimationImmediately()
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        @discardableResult
+        func add(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.target = self
+            menu.addItem(item)
+            return item
         }
-        toolbar.onOCR = { [weak self] in
-            self?.toggleOCRSelection()
+        add(L10n.pinToolbarCopy, #selector(copyFromMenu), key: "c")
+        add(L10n.pinToolbarEdit, #selector(editFromMenu), key: "e")
+        let ocr = add(L10n.tipOCR, #selector(ocrFromMenu), key: "o")
+        ocr.state = isOCRSelectionEnabled ? .on : .off
+        menu.addItem(.separator())
+        add(L10n.pinResetZoom, #selector(resetZoomFromMenu), key: "0")
+        let shadow = add(L10n.pinShowShadow, #selector(toggleShadowFromMenu))
+        shadow.state = window?.hasShadow == true ? .on : .off
+        let opacityItem = NSMenuItem(title: L10n.pinOpacity, action: nil, keyEquivalent: "")
+        let opacityMenu = NSMenu()
+        for percent in [100, 80, 60, 40, 20] {
+            let item = NSMenuItem(title: "\(percent)% \(L10n.pinOpacity)", action: #selector(opacityFromMenu(_:)), keyEquivalent: "")
+            item.target = self
+            item.tag = percent
+            item.state = abs((window?.alphaValue ?? 1) - CGFloat(percent) / 100) < 0.005 ? .on : .off
+            opacityMenu.addItem(item)
         }
-        toolbar.onCopy = { [weak self] in
-            self?.copyPinnedImage()
+        opacityMenu.addItem(.separator())
+        for (title, key, tag) in [(L10n.pinMoreOpaque, "\u{f700}", 1), (L10n.pinLessOpaque, "\u{f701}", -1)] {
+            let item = NSMenuItem(title: title, action: #selector(adjustOpacityFromMenu(_:)), keyEquivalent: key)
+            item.keyEquivalentModifierMask = [.command, .option]
+            item.target = self
+            item.tag = tag
+            opacityMenu.addItem(item)
         }
-        toolbar.onDrag = { [weak self] event in
-            self?.beginPinnedImageDrag(with: event)
-        }
-        toolbar.onResetZoom = { [weak self] in
-            self?.resetZoomTo100Percent()
-        }
-        toolbar.onClose = { [weak self] in
-            self?.pinWindow?.dismiss()
-        }
-        toolbar.onPointerEvent = { [weak self] in
-            self?.refreshToolbarVisibility(animated: true)
-        }
-        toolbar.onScrollWheel = { [weak self] event in
-            self?.handleScrollWheel(event, focusesAtEventLocation: false)
-        }
-        toolbar.onMagnify = { [weak self] event in
-            self?.handleMagnify(event, focusesAtEventLocation: false)
-        }
-        addSubview(toolbar)
+        opacityItem.submenu = opacityMenu
+        menu.addItem(opacityItem)
+        let passthrough = add(L10n.pinMousePassthrough, #selector(passthroughFromMenu), key: "p")
+        passthrough.keyEquivalentModifierMask = [.command, .shift]
+        let recovery = add(L10n.pinRestoreInteraction, #selector(recoverFromMenu), key: "p")
+        recovery.keyEquivalentModifierMask = [.control, .option, .command]
+        menu.addItem(.separator())
+        let dragHint = NSMenuItem(title: L10n.pinExportDragHint, action: nil, keyEquivalent: "")
+        dragHint.isEnabled = false
+        menu.addItem(dragHint)
+        menu.addItem(.separator())
+        let close = add(L10n.pinToolbarClose, #selector(closeFromMenu), key: "\u{1b}")
+        close.keyEquivalentModifierMask = []
+        return menu
     }
+
+    @objc private func copyFromMenu() { copyPinnedImage() }
+    @objc private func editFromMenu() { editPinnedImage() }
+    @objc private func ocrFromMenu() { toggleOCRSelection() }
+    @objc private func resetZoomFromMenu() { resetZoomTo100Percent() }
+    @objc private func closeFromMenu() { pinWindow?.dismiss() }
+    @objc private func toggleShadowFromMenu() {
+        guard let window else { return }
+        window.hasShadow.toggle()
+        window.invalidateShadow()
+    }
+
+    @objc private func opacityFromMenu(_ sender: NSMenuItem) {
+        window?.alphaValue = CGFloat(sender.tag) / 100
+    }
+    @objc private func adjustOpacityFromMenu(_ sender: NSMenuItem) {
+        adjustOpacity(by: CGFloat(sender.tag) * 0.1)
+    }
+    private func adjustOpacity(by delta: CGFloat) {
+        guard let window else { return }
+        window.alphaValue = min(max(window.alphaValue + delta, 0.2), 1)
+    }
+    @objc private func passthroughFromMenu() {
+        guard let window else { return }
+        PinWindowManager.shared.enableMousePassthrough(for: window)
+    }
+    @objc private func recoverFromMenu() { PinWindowManager.shared.restoreMouseInteraction() }
 
     private func copyPinnedImage() {
         guard let image else { return }
@@ -1595,20 +1662,7 @@ final class PinContentView: NSView, NSDraggingSource {
 
     override func layout() {
         super.layout()
-        updateToolbarFrame()
         updateOCROverlayFrame()
-        updateImageTrackingArea()
-        refreshToolbarVisibility(animated: false)
-    }
-
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        updateImageTrackingArea()
-    }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        refreshToolbarVisibility(animated: false)
     }
 
     private func updateOCROverlayFrame() {
@@ -1632,7 +1686,25 @@ final class PinContentView: NSView, NSDraggingSource {
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if handleOCRKeyEquivalent(event) {
+        if handleOCRKeyEquivalent(event) { return true }
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        if flags == .command {
+            switch key {
+            case "c": copyPinnedImage()
+            case "e": editPinnedImage()
+            case "o": toggleOCRSelection()
+            case "0": resetZoomTo100Percent()
+            default: return super.performKeyEquivalent(with: event)
+            }
+            return true
+        }
+        if flags == [.command, .shift], key == "p" {
+            passthroughFromMenu()
+            return true
+        }
+        if flags == [.command, .option], event.keyCode == 126 || event.keyCode == 125 {
+            adjustOpacity(by: event.keyCode == 126 ? 0.1 : -0.1)
             return true
         }
         return super.performKeyEquivalent(with: event)
@@ -1644,22 +1716,82 @@ final class PinContentView: NSView, NSDraggingSource {
         true
     }
 
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let hit = super.hitTest(point) else { return nil }
+        let localPoint = convert(point, from: superview)
+        if let event = NSApp.currentEvent,
+           event.type == .rightMouseDown ||
+            (event.type == .leftMouseDown && event.modifierFlags.contains(.control)) ||
+            event.modifierFlags.contains(.option) {
+            return self
+        }
+        return resizeCorner(at: localPoint) != nil ? self : hit
+    }
+
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         guard !usesLowResolutionPreview else { return }
         let point = convert(event.locationInWindow, from: nil)
-        guard imageHoverRect().contains(point) else { return }
-
+        guard imageHoverRect().contains(point), let window else { return }
+        if event.modifierFlags.contains(.control) {
+            if let menu = menu(for: event) { NSMenu.popUpContextMenu(menu, with: event, for: self) }
+            return
+        }
+        if event.modifierFlags.contains(.option) {
+            exportDragStart = window.convertPoint(toScreen: event.locationInWindow)
+            return
+        }
+        if let corner = resizeCorner(at: point) {
+            cornerDrag = CornerDrag(
+                corner: corner, initialFrame: window.frame,
+                startPoint: window.convertPoint(toScreen: event.locationInWindow),
+                initialScale: zoomScale
+            )
+            beginInteractiveZoom()
+            return
+        }
         if event.clickCount >= 2 {
             pinWindow?.dismiss()
             return
         }
-
-        performPinWindowDrag(with: event)
+        pinWindow?.performDrag(with: event)
     }
 
-    private func performPinWindowDrag(with event: NSEvent) {
-        pinWindow?.performDrag(with: event)
+    override func mouseDragged(with event: NSEvent) {
+        guard let window else { return }
+        let point = window.convertPoint(toScreen: event.locationInWindow)
+        if let start = exportDragStart {
+            if hypot(point.x - start.x, point.y - start.y) >= 4 {
+                exportDragStart = nil
+                beginPinnedImageDrag(with: event)
+            }
+            return
+        }
+        guard let drag = cornerDrag else { return }
+        // Project pointer movement onto the image diagonal so its aspect ratio
+        // stays fixed. The opposite visible corner remains at its screen point.
+        let content = normalizedImageContentRect
+        let vx = (drag.corner.x == 0 ? -1.0 : 1.0) * baseImageSize.width * content.width
+        let vy = (drag.corner.y == 0 ? -1.0 : 1.0) * baseImageSize.height * content.height
+        let lengthSquared = vx * vx + vy * vy
+        guard lengthSquared > 0 else { return }
+        let delta = ((point.x - drag.startPoint.x) * vx + (point.y - drag.startPoint.y) * vy) / lengthSquared
+        zoomScale = min(max(drag.initialScale + delta, PinZoom.minScale), PinZoom.maxScale)
+        let anchor = NSPoint(
+            x: drag.corner.x == 0 ? content.maxX : content.minX,
+            y: drag.corner.y == 0 ? content.maxY : content.minY
+        )
+        window.setFrame(PinImageLayout.resizedFrame(
+            from: drag.initialFrame, to: scaledImageSize(for: zoomScale), focusing: anchor
+        ), display: true)
+        updateImageInteractionGeometry()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        exportDragStart = nil
+        guard cornerDrag != nil else { return }
+        cornerDrag = nil
+        finishInteractiveZoom()
     }
 
     func draggingSession(
@@ -1687,6 +1819,7 @@ final class PinContentView: NSView, NSDraggingSource {
     }
 
     private func handleScrollWheel(_ event: NSEvent, focusesAtEventLocation: Bool) {
+        guard cornerDrag == nil else { return }
         let shouldFinish = shouldFinishInteractiveZoom(for: event, includesMomentum: true)
         let delta = event.scrollingDeltaY
         guard delta != 0 else {
@@ -1732,6 +1865,7 @@ final class PinContentView: NSView, NSDraggingSource {
     }
 
     private func handleMagnify(_ event: NSEvent, focusesAtEventLocation: Bool) {
+        guard cornerDrag == nil else { return }
         let shouldFinish = shouldFinishInteractiveZoom(for: event, includesMomentum: false)
         let factor = max(0.1, 1 + event.magnification)
         let proposedScale = zoomScale * factor
@@ -1763,21 +1897,6 @@ final class PinContentView: NSView, NSDraggingSource {
         if let oldInterpolation {
             context?.imageInterpolation = oldInterpolation
         }
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        super.mouseEntered(with: event)
-        updateToolbarVisibility(for: event, animated: true)
-    }
-
-    override func mouseMoved(with event: NSEvent) {
-        super.mouseMoved(with: event)
-        updateToolbarVisibility(for: event, animated: true)
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        super.mouseExited(with: event)
-        updateToolbarVisibility(for: event, animated: true)
     }
 
     private func resetZoomTo100Percent() {
@@ -2028,162 +2147,57 @@ final class PinContentView: NSView, NSDraggingSource {
         return rect
     }
 
-    private func updateToolbarFrame() {
-        let contentRect = PinImageLayout.contentRect(
-            in: bounds,
-            normalizedContentRect: normalizedImageContentRect
-        )
-        toolbar.frame = PinImageLayout.toolbarFrame(
-            in: contentRect,
-            preferredSize: NSSize(
-                width: PinToolbarView.preferredWidth,
-                height: PinToolbarView.preferredHeight
-            )
-        )
+    private var visibleImageRect: NSRect {
+        PinImageLayout.contentRect(in: bounds, normalizedContentRect: normalizedImageContentRect)
+    }
+
+    private var resizeRegions: [(corner: NSPoint, rect: NSRect)] {
+        let rect = visibleImageRect
+        let side = min(16, rect.width / 3, rect.height / 3)
+        guard side > 0 else { return [] }
+        return [NSPoint(x: 0, y: 0), NSPoint(x: 1, y: 0),
+                NSPoint(x: 0, y: 1), NSPoint(x: 1, y: 1)].map { corner in
+            (corner, NSRect(
+                x: corner.x == 0 ? rect.minX : rect.maxX - side,
+                y: corner.y == 0 ? rect.minY : rect.maxY - side,
+                width: side, height: side
+            ))
+        }
+    }
+
+    private func resizeCorner(at point: NSPoint) -> NSPoint? {
+        resizeRegions.first { $0.rect.contains(point) }?.corner
+    }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        for region in resizeRegions {
+            let index = region.corner.x == region.corner.y ? 0 : 1
+            addCursorRect(region.rect, cursor: Self.resizeCursors[index])
+        }
+    }
+
+    private static func makeResizeCursor(symbol: String) -> NSCursor {
+        let image = NSImage(size: NSSize(width: 24, height: 24), flipped: false) { rect in
+            guard let symbolImage = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) else {
+                return false
+            }
+            let shadow = NSShadow()
+            shadow.shadowColor = NSColor.white
+            shadow.shadowBlurRadius = 2
+            shadow.set()
+            NSColor.black.set()
+            symbolImage.draw(in: rect.insetBy(dx: 3, dy: 3))
+            return true
+        }
+        return NSCursor(image: image, hotSpot: NSPoint(x: 12, y: 12))
     }
 
     private func updateImageInteractionGeometry() {
-        updateToolbarFrame()
         updateOCROverlayFrame()
-        updateImageTrackingArea()
-        refreshToolbarVisibility(animated: true)
+        window?.invalidateCursorRects(for: self)
     }
 
-    private func updateImageTrackingArea() {
-        if let imageTrackingArea {
-            removeTrackingArea(imageTrackingArea)
-            self.imageTrackingArea = nil
-        }
-
-        let rect = imageHoverRect()
-        guard rect.width > 0, rect.height > 0 else {
-            cancelToolbarAutoHide()
-            toolbarIsSuppressedAfterAutoHide = false
-            setToolbarVisible(false, animated: false)
-            return
-        }
-
-        let area = NSTrackingArea(
-            rect: rect,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(area)
-        imageTrackingArea = area
-    }
-
-    private func updateToolbarVisibility(for event: NSEvent, animated: Bool) {
-        let point = convert(event.locationInWindow, from: nil)
-        updateToolbarHover(at: point, animated: animated)
-    }
-
-    private func refreshToolbarVisibility(animated: Bool) {
-        guard let window else {
-            cancelToolbarAutoHide()
-            toolbarIsSuppressedAfterAutoHide = false
-            setToolbarVisible(false, animated: false)
-            return
-        }
-
-        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
-        updateToolbarHover(at: point, animated: animated)
-    }
-
-    private func updateToolbarHover(at point: NSPoint, animated: Bool) {
-        if usesLowResolutionPreview {
-            cancelToolbarAutoHide()
-            toolbarIsSuppressedAfterAutoHide = false
-            setToolbarVisible(true, animated: animated)
-            return
-        }
-
-        let overImage = imageHoverRect().contains(point)
-        let overToolbar = toolbar.frame.contains(point)
-
-        guard overImage else {
-            cancelToolbarAutoHide()
-            toolbarIsSuppressedAfterAutoHide = false
-            setToolbarVisible(false, animated: animated)
-            return
-        }
-
-        if overToolbar {
-            cancelToolbarAutoHide()
-            toolbarIsSuppressedAfterAutoHide = false
-            setToolbarVisible(true, animated: animated)
-            return
-        }
-
-        // Hovering over the pinned image outside of the toolbar only keeps the
-        // toolbar visible for a short time. Once that time expires the toolbar
-        // stays hidden until the pointer reaches the toolbar region again.
-        if toolbarIsSuppressedAfterAutoHide {
-            setToolbarVisible(false, animated: animated)
-            return
-        }
-
-        setToolbarVisible(true, animated: animated)
-        scheduleToolbarAutoHideIfNeeded()
-    }
-
-    private func scheduleToolbarAutoHideIfNeeded() {
-        guard toolbarAutoHideTimer == nil else { return }
-        let timer = Timer(
-            timeInterval: PinZoom.toolbarHoverDuration,
-            repeats: false
-        ) { [weak self] _ in
-            self?.toolbarAutoHideTimer = nil
-            self?.handleToolbarAutoHide()
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        toolbarAutoHideTimer = timer
-    }
-
-    private func handleToolbarAutoHide() {
-        guard let window else {
-            setToolbarVisible(false, animated: false)
-            return
-        }
-
-        let point = convert(window.mouseLocationOutsideOfEventStream, from: nil)
-        let overImage = imageHoverRect().contains(point)
-        let overToolbar = toolbar.frame.contains(point)
-        guard overImage, !overToolbar else { return }
-
-        toolbarIsSuppressedAfterAutoHide = true
-        setToolbarVisible(false, animated: true)
-    }
-
-    private func cancelToolbarAutoHide() {
-        toolbarAutoHideTimer?.invalidate()
-        toolbarAutoHideTimer = nil
-    }
-
-    private func setToolbarVisible(_ visible: Bool, animated: Bool) {
-        guard visible != isToolbarVisible else { return }
-        isToolbarVisible = visible
-        if visible {
-            toolbar.isHidden = false
-        }
-
-        let finish = { [weak self] in
-            guard let self, !self.isToolbarVisible else { return }
-            self.toolbar.isHidden = true
-        }
-        if animated {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = PinZoom.toolbarAnimationDuration
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                toolbar.animator().alphaValue = visible ? 1 : 0
-            } completionHandler: {
-                finish()
-            }
-        } else {
-            toolbar.alphaValue = visible ? 1 : 0
-            finish()
-        }
-    }
 }
 
 // MARK: - Pin Toolbar

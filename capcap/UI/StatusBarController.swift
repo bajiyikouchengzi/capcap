@@ -103,6 +103,14 @@ class StatusBarController: NSObject {
         colorPickerItem.image = Self.menuIcon(systemName: "eyedropper")
         HotkeyManager.applyColorPickerToMenuItem(colorPickerItem)
         menu.addItem(colorPickerItem)
+        let paletteItem = NSMenuItem(title: L10n.colorPaletteTitle, action: #selector(showColorPalette), keyEquivalent: "")
+        paletteItem.target = self
+        paletteItem.image = Self.menuIcon(systemName: "paintpalette")
+        menu.addItem(paletteItem)
+        let recoverPins = NSMenuItem(title: L10n.pinRestoreInteraction, action: #selector(restorePinInteraction), keyEquivalent: "p")
+        recoverPins.keyEquivalentModifierMask = [.control, .option, .command]
+        recoverPins.target = self
+        menu.addItem(recoverPins)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -175,6 +183,9 @@ class StatusBarController: NSObject {
     @objc private func uploadFiles() {
         onUploadFiles()
     }
+
+    @objc private func showColorPalette() { ColorPaletteWindowController.shared.showPalette() }
+    @objc private func restorePinInteraction() { PinWindowManager.shared.restoreMouseInteraction() }
 
     @objc private func colorPicker() {
         onColorPicker()

@@ -84,6 +84,7 @@ class SettingsView: NSView {
     private var menuBarSwitch: NSSwitch!
     private var launchAtLoginSwitch: NSSwitch!
     private var pinAcrossSpacesSwitch: NSSwitch!
+    private var colorPaletteButton: NSButton?
 
     // Picker & slider
     private var langPicker: NSPopUpButton!
@@ -812,6 +813,13 @@ class SettingsView: NSView {
 
         capture.addArrangedSubview(pinCard)
         pinCard.widthAnchor.constraint(equalTo: capture.widthAnchor).isActive = true
+
+        let paletteButton = NSButton(title: L10n.colorPaletteTitle,
+                                     target: ColorPaletteWindowController.shared,
+                                     action: #selector(ColorPaletteWindowController.showPalette))
+        colorPaletteButton = paletteButton
+        paletteButton.bezelStyle = .rounded
+        capture.addArrangedSubview(paletteButton)
 
         buildRecordingCard(into: recording)
         buildHistoryCards(into: history)
@@ -5291,6 +5299,7 @@ class SettingsView: NSView {
         updateMicrophoneControlsEnabled()
         menuBarTitleLabel?.stringValue = L10n.showMenuBarIcon
         launchAtLoginTitleLabel?.stringValue = L10n.launchAtLogin
+        colorPaletteButton?.title = L10n.colorPaletteTitle
         pinAcrossSpacesTitleLabel?.stringValue = L10n.pinAcrossSpaces
         pinAcrossSpacesSubtitleLabel?.stringValue = L10n.pinAcrossSpacesHint
         pinAcrossSpacesSwitch?.state = Defaults.pinAcrossSpaces ? .on : .off

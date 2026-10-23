@@ -88,7 +88,7 @@ final class PinWindowInteractionTests: XCTestCase {
         XCTAssertTrue(imageBounds.contains(toolbarFrame))
     }
 
-    func testPinToolbarUsesOpaqueContentBoundsInsteadOfShadowPadding() throws {
+    func testPinUsesOpaqueContentBoundsWithoutFloatingToolbar() throws {
         let image = try Self.makeImage(
             width: 100,
             height: 80,
@@ -100,14 +100,6 @@ final class PinWindowInteractionTests: XCTestCase {
             in: NSRect(x: 0, y: 0, width: 1_000, height: 800),
             normalizedContentRect: normalizedContentRect
         )
-
-        let toolbarFrame = PinImageLayout.toolbarFrame(
-            in: contentRect,
-            preferredSize: NSSize(
-                width: PinToolbarView.preferredWidth,
-                height: PinToolbarView.preferredHeight
-            )
-        )
         let contentView = PinContentView(
             frame: NSRect(x: 0, y: 0, width: 1_000, height: 800)
         )
@@ -115,15 +107,9 @@ final class PinWindowInteractionTests: XCTestCase {
             cgImage: image,
             size: NSSize(width: 1_000, height: 800)
         )
-        let toolbar = try XCTUnwrap(
-            contentView.subviews.first { $0 is PinToolbarView } as? PinToolbarView
-        )
 
         XCTAssertEqual(contentRect, NSRect(x: 100, y: 120, width: 800, height: 600))
-        XCTAssertEqual(toolbarFrame.minX, 108, accuracy: 0.001)
-        XCTAssertEqual(toolbarFrame.maxY, 712, accuracy: 0.001)
-        XCTAssertTrue(contentRect.contains(toolbarFrame))
-        XCTAssertEqual(toolbar.frame, toolbarFrame)
+        XCTAssertFalse(contentView.subviews.contains { $0 is PinToolbarView })
     }
 
     func testOpaquePinImageKeepsTheWholeImageAsContentBounds() throws {

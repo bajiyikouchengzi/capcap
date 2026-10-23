@@ -3260,24 +3260,26 @@ class ToolbarView: NSView {
 
     /// Button run geometry. `preferredSize` derives the capsule size from
     /// these so the dark background always wraps the buttons exactly.
-    static let buttonSize: CGFloat = 40
-    static let symbolPointSize: CGFloat = 18
-    static let buttonSpacing: CGFloat = 6
+    static var buttonSize: CGFloat { Defaults.toolbarDensity.buttonPoints }
+    static var symbolPointSize: CGFloat { Defaults.toolbarIconSize.iconPoints }
+    static var buttonSpacing: CGFloat { Defaults.toolbarDensity.gap }
     /// Inset along the main axis at both ends of the run.
-    static let endPadding: CGFloat = 15
+    static var endPadding: CGFloat { Defaults.toolbarDensity.endPadding }
     /// Inset on the cross axis — keeps a 52pt-thick capsule around 40pt buttons.
-    static let crossPadding: CGFloat = 6
+    static var crossPadding: CGFloat { Defaults.toolbarDensity.crossPadding }
 
+    private let density = Defaults.toolbarDensity
+    private let iconPoints = Defaults.toolbarIconSize.iconPoints
     let orientation: Orientation
     private let items: [ToolbarItemID]
 
     /// Size that fits the current items in the current orientation.
     var preferredSize: NSSize {
         let n = items.count
-        let run = CGFloat(n) * Self.buttonSize
-            + CGFloat(max(0, n - 1)) * Self.buttonSpacing
-            + Self.endPadding * 2
-        let thickness = Self.buttonSize + Self.crossPadding * 2
+        let run = CGFloat(n) * density.buttonPoints
+            + CGFloat(max(0, n - 1)) * density.gap
+            + density.endPadding * 2
+        let thickness = density.buttonPoints + density.crossPadding * 2
         switch orientation {
         case .horizontal: return NSSize(width: max(run, thickness), height: thickness)
         case .vertical:   return NSSize(width: thickness, height: max(run, thickness))
@@ -3348,18 +3350,18 @@ class ToolbarView: NSView {
     var scrollCaptureButtonFrame: NSRect? { frame(for: .scrollCapture) }
 
     private func setupButtons() {
-        let size = Self.buttonSize
-        let step = size + Self.buttonSpacing
+        let size = density.buttonPoints
+        let step = size + density.gap
         for (index, id) in items.enumerated() {
-            let along = Self.endPadding + CGFloat(index) * step
+            let along = density.endPadding + CGFloat(index) * step
             let frame: NSRect
             switch orientation {
             case .horizontal:
-                frame = NSRect(x: along, y: Self.crossPadding, width: size, height: size)
+                frame = NSRect(x: along, y: density.crossPadding, width: size, height: size)
             case .vertical:
                 // AppKit y grows upward, so the first item sits at the top.
-                let y = bounds.height - Self.endPadding - size - CGFloat(index) * step
-                frame = NSRect(x: Self.crossPadding, y: y, width: size, height: size)
+                let y = bounds.height - density.endPadding - size - CGFloat(index) * step
+                frame = NSRect(x: density.crossPadding, y: y, width: size, height: size)
             }
             let view = makeButton(for: id, index: index, frame: frame)
             buttons[id] = view
@@ -3383,10 +3385,10 @@ class ToolbarView: NSView {
             symbolName: id.symbolName,
             normalColor: id.normalColor,
             selectedColor: id.selectedColor,
-            symbolPointSize: Self.symbolPointSize,
-            iconImage: id.iconImage(pointSize: Self.symbolPointSize)
+            symbolPointSize: iconPoints,
+            iconImage: id.iconImage(pointSize: iconPoints)
         )
-        btn.hoverTip = id.tooltip
+        btn.hoverTip = EditorShortcutRegistry.displayString(for: .toolbar(id)).map { "\(id.tooltip)  \($0)" } ?? id.tooltip
         btn.setAccessibilityLabel(id.tooltip)
         btn.setAccessibilityIdentifier("capcap.toolbar.\(id.rawValue)")
         btn.target = self
@@ -3541,6 +3543,7 @@ final class MoveSelectionDragHandle: NSView {
     var onDragEnd: (() -> Void)?
     var hoverTip: String?
 
+    private let symbolPointSize = ToolbarView.symbolPointSize
     private var pressStartLocation: NSPoint?
     private var isPressed: Bool = false {
         didSet { needsDisplay = true }
@@ -3629,7 +3632,7 @@ final class MoveSelectionDragHandle: NSView {
         }
 
         let symbolName = "arrow.up.and.down.and.arrow.left.and.right"
-        let config = NSImage.SymbolConfiguration(pointSize: ToolbarView.symbolPointSize, weight: .medium)
+        let config = NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: .medium)
         guard let img = NSImage(
             systemSymbolName: symbolName,
             accessibilityDescription: "Move selection"

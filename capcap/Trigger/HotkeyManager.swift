@@ -25,6 +25,7 @@ final class HotkeyManager {
     private var colorPickerHotKeyRef: EventHotKeyRef?
     private var historyPanelHotKeyRef: EventHotKeyRef?
     private var historyPreviewHotKeyRef: EventHotKeyRef?
+    private var pinRecoveryHotKeyRef: EventHotKeyRef?
     private var callback: ((CaptureTriggerContext) -> Void)?
     private var countdownCallback: (() -> Void)?
     private var quickPinCallback: (() -> Void)?
@@ -64,6 +65,9 @@ final class HotkeyManager {
     private static let historyPreviewHotKeyID: UInt32 = 16
     private static let finderUploadHotKeyID: UInt32 = 17
     private static let quickPinHotKeyID: UInt32 = 18
+    private static let pinRecoveryHotKeyID: UInt32 = 19
+    static let pinRecoveryKeyCode = UInt32(kVK_ANSI_P)
+    static let pinRecoveryModifiers = UInt32(controlKey | optionKey | cmdKey)
 
     private init() {}
 
@@ -86,6 +90,7 @@ final class HotkeyManager {
         unregisterColorPicker()
         unregisterHistoryPanel()
         unregisterHistoryPreview()
+        unregisterPinRecovery()
         if let handler = eventHandlerRef {
             RemoveEventHandler(handler)
             eventHandlerRef = nil
@@ -492,6 +497,27 @@ final class HotkeyManager {
         }
     }
 
+    /// Reserve recovery only while a pin ignores mouse events. If registration
+    /// fails, the caller leaves the pin interactive.
+    @discardableResult
+    func registerPinRecovery() -> Bool {
+        guard !isRecording else { return false }
+        if pinRecoveryHotKeyRef != nil { return true }
+        installEventHandlerIfNeeded()
+        var ref: EventHotKeyRef?
+        let id = EventHotKeyID(signature: Self.regularHotKeySignature, id: Self.pinRecoveryHotKeyID)
+        let status = RegisterEventHotKey(Self.pinRecoveryKeyCode, Self.pinRecoveryModifiers,
+                                        id, GetApplicationEventTarget(), 0, &ref)
+        guard status == noErr, let ref else { return false }
+        pinRecoveryHotKeyRef = ref
+        return true
+    }
+
+    func unregisterPinRecovery() {
+        if let pinRecoveryHotKeyRef { UnregisterEventHotKey(pinRecoveryHotKeyRef) }
+        pinRecoveryHotKeyRef = nil
+    }
+
     /// Register the saved color-picker hotkey, if any.
     func registerColorPicker(callback: @escaping () -> Void) {
         self.colorPickerCallback = callback
@@ -587,6 +613,7 @@ final class HotkeyManager {
     /// Called by Settings UI when the user starts capturing a new key combo.
     /// Suspends the active hotkey so the user's recorded keypress is not swallowed.
     func beginRecording() {
+        PinWindowManager.shared.restoreMouseInteraction()
         isRecording = true
         unregister()
         unregisterCountdown()
@@ -1008,6 +1035,10 @@ final class HotkeyManager {
     func hotkeyConflictMessage(forKeyCode keyCode: UInt32,
                                modifiers: UInt32,
                                assigningTo slot: HotkeySlot? = nil) -> String? {
+        if keyCode == Self.pinRecoveryKeyCode, modifiers == Self.pinRecoveryModifiers {
+            return L10n.pinRestoreInteraction
+        }
+
         if slot != .screenshot {
             if let (kc, m) = currentHotkey(), kc == keyCode, m == modifiers {
                 return L10n.shortcutConflictScreenshot
@@ -1285,6 +1316,8 @@ final class HotkeyManager {
                     callback = mgr.finderUploadCallback
                 case HotkeyManager.fullScreenScreenshotHotKeyID:
                     callback = mgr.fullScreenScreenshotCallback
+                case HotkeyManager.pinRecoveryHotKeyID:
+                    callback = { PinWindowManager.shared.restoreMouseInteraction() }
                 case HotkeyManager.colorPickerHotKeyID:
                     callback = mgr.colorPickerCallback
                 case HotkeyManager.historyPanelHotKeyID:

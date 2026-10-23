@@ -6118,8 +6118,8 @@ private enum HistoryPanelEntryActions {
             ToastWindow.show(message: L10n.copiedToClipboard)
             return recordSuccessfulCopy(of: entry)
         case .color(let hex):
-            ClipboardManager.copyColorToClipboard(hex: hex)
-            ToastWindow.show(message: L10n.colorCopied(hex.uppercased()))
+            let copied = ClipboardManager.copyColorToClipboard(hex: hex)
+            ToastWindow.show(message: L10n.colorCopied(copied))
             return recordSuccessfulCopy(of: entry)
         case .text(let text):
             ClipboardManager.copyHistoryTextToClipboard(text.value)

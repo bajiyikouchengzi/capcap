@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "Проверить снова";
 
 "historyFilePreviewUnavailable" = "Предпросмотр этого файла недоступен";
+
+// Pinned image context menu
+"pinShowShadow" = "Показать тень";
+"pinResetZoom" = "Вернуть исходный размер";
+"pinExportDragHint" = "Удерживайте Option и перетащите для экспорта изображения";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "Маленький";
+"sizeMedium" = "Средний";
+"sizeLarge" = "Большой";
+"toolbarIconSizeTitle" = "Размер значков";
+"toolbarDensityTitle" = "Размер панели инструментов";
+"toolbarSizeHint" = "Применяется со следующего снимка с отдельной настройкой значков и интервалов";
+"colorPaletteTitle" = "Палитра и настройки пипетки";
+"colorCopyFormat" = "Формат копирования цвета";
+"colorPaletteHint" = "Нажмите цвет для копирования или звезду для избранного";
+"colorFavoritesTitle" = "Избранные цвета";
+"colorFavoritesEmpty" = "Добавьте недавний цвет нажатием на звезду";
+"colorRecentTitle" = "Недавние цвета";
+"colorRecentEmpty" = "Здесь появятся цвета из истории";
+"colorCopyAction" = "Копировать цвет";
+"colorAddFavorite" = "Добавить цвет в избранное";
+"colorRemoveFavorite" = "Удалить цвет из избранного";
+"pinRestoreInteraction" = "Вернуть управление мышью для закреплённых изображений";
+"pinRecoveryUnavailable" = "Клавиши восстановления заняты, управление изображением сохранено";
+"pinRecoveryHint" = "Пропуск мыши включён, нажмите ⌃⌥⌘P для восстановления";
+"pinInteractionRestored" = "Управление мышью восстановлено";
+"pinOpacity" = "Непрозрачность";
+"pinMoreOpaque" = "Увеличить непрозрачность";
+"pinLessOpaque" = "Уменьшить непрозрачность";
+"pinMousePassthrough" = "Пропускать мышь";
+"colorPickerControls" = "Стрелки перемещают на пиксель · Return/Enter подтверждает · Esc отменяет";

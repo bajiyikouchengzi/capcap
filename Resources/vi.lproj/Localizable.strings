@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "Kiểm tra lại";
 
 "historyFilePreviewUnavailable" = "Không thể xem trước tệp này";
+
+// Pinned image context menu
+"pinShowShadow" = "Hiện bóng đổ";
+"pinResetZoom" = "Khôi phục kích thước ban đầu";
+"pinExportDragHint" = "Giữ Option và kéo để xuất hình ảnh";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "Nhỏ";
+"sizeMedium" = "Vừa";
+"sizeLarge" = "Lớn";
+"toolbarIconSizeTitle" = "Kích thước biểu tượng";
+"toolbarDensityTitle" = "Kích thước bố cục thanh công cụ";
+"toolbarSizeHint" = "Áp dụng từ lần chụp tiếp theo với biểu tượng và khoảng cách điều chỉnh riêng";
+"colorPaletteTitle" = "Bảng màu và cài đặt lấy màu";
+"colorCopyFormat" = "Định dạng sao chép màu";
+"colorPaletteHint" = "Nhấp màu để sao chép hoặc nhấp ngôi sao để quản lý yêu thích";
+"colorFavoritesTitle" = "Màu yêu thích";
+"colorFavoritesEmpty" = "Nhấp ngôi sao bên cạnh màu gần đây để thêm";
+"colorRecentTitle" = "Màu gần đây";
+"colorRecentEmpty" = "Màu được lưu trong lịch sử sẽ hiển thị ở đây";
+"colorCopyAction" = "Sao chép màu";
+"colorAddFavorite" = "Yêu thích màu";
+"colorRemoveFavorite" = "Bỏ yêu thích màu";
+"pinRestoreInteraction" = "Khôi phục thao tác chuột trên ảnh ghim";
+"pinRecoveryUnavailable" = "Phím khôi phục đang được dùng, ảnh vẫn tương tác được";
+"pinRecoveryHint" = "Đã bật xuyên chuột, nhấn ⌃⌥⌘P để khôi phục thao tác";
+"pinInteractionRestored" = "Đã khôi phục thao tác chuột trên ảnh ghim";
+"pinOpacity" = "Độ mờ đục";
+"pinMoreOpaque" = "Tăng độ mờ đục";
+"pinLessOpaque" = "Giảm độ mờ đục";
+"pinMousePassthrough" = "Xuyên chuột";
+"colorPickerControls" = "Phím mũi tên di chuyển một pixel · Return/Enter xác nhận · Esc hủy";

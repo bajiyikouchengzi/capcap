@@ -1403,7 +1403,7 @@ class OverlayWindowController {
         switch magnifierLensPanelFormat {
         case .hex:
             value = hex
-            ClipboardManager.copyColorToClipboard(hex: hex)
+            ClipboardManager.copyColorToClipboard(hex: hex, format: .hex)
         case .rgb:
             value = rgb
             ClipboardManager.copyToClipboard(text: rgb, skipHistory: true)

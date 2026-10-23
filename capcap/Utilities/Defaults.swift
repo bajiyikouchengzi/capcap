@@ -187,6 +187,9 @@ enum L10n {
     static var pinToolbarDrag: String { s("pinToolbarDrag") }
     static var pinToolbarEdit: String { s("pinToolbarEdit") }
     static var pinToolbarEditText: String { s("pinToolbarEditText") }
+    static var pinShowShadow: String { s("pinShowShadow") }
+    static var pinResetZoom: String { s("pinResetZoom") }
+    static var pinExportDragHint: String { s("pinExportDragHint") }
 
     // Image-edit shortcuts
     static var selectedImageEditShortcutHeader: String { s("selectedImageEditShortcutHeader") }
@@ -2527,4 +2530,68 @@ struct Defaults {
             }
         }
     }
+}
+
+extension Defaults {
+    static var toolbarIconSize: ToolbarSizeOption {
+        get { ToolbarSizeOption(rawValue: defaults.string(forKey: "toolbarIconSize") ?? "") ?? .medium }
+        set { defaults.set(newValue.rawValue, forKey: "toolbarIconSize") }
+    }
+    static var toolbarDensity: ToolbarSizeOption {
+        get { ToolbarSizeOption(rawValue: defaults.string(forKey: "toolbarDensity") ?? "") ?? .medium }
+        set { defaults.set(newValue.rawValue, forKey: "toolbarDensity") }
+    }
+    static var colorValueFormat: ColorValueFormat {
+        get { ColorValueFormat(rawValue: defaults.string(forKey: "colorValueFormat") ?? "") ?? .hex }
+        set {
+            defaults.set(newValue.rawValue, forKey: "colorValueFormat")
+            NotificationCenter.default.post(name: .colorPaletteDidChange, object: nil)
+        }
+    }
+    static var favoriteColorHexes: [String] {
+        get { normalizedFavoriteColors(defaults.stringArray(forKey: "favoriteColorHexes") ?? []) }
+        set {
+            defaults.set(normalizedFavoriteColors(newValue), forKey: "favoriteColorHexes")
+            NotificationCenter.default.post(name: .colorPaletteDidChange, object: nil)
+        }
+    }
+    private static func normalizedFavoriteColors(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.compactMap { value in
+            guard let hex = ClipboardColorParser.normalizedHex(from: value), seen.insert(hex).inserted else { return nil }
+            return hex
+        }
+    }
+}
+
+extension Notification.Name {
+    static let colorPaletteDidChange = Notification.Name("capcap.colorPaletteDidChange")
+}
+
+extension L10n {
+    static var sizeSmall: String { s("sizeSmall") }
+    static var sizeMedium: String { s("sizeMedium") }
+    static var sizeLarge: String { s("sizeLarge") }
+    static var toolbarIconSizeTitle: String { s("toolbarIconSizeTitle") }
+    static var toolbarDensityTitle: String { s("toolbarDensityTitle") }
+    static var toolbarSizeHint: String { s("toolbarSizeHint") }
+    static var colorPaletteTitle: String { s("colorPaletteTitle") }
+    static var colorCopyFormat: String { s("colorCopyFormat") }
+    static var colorPaletteHint: String { s("colorPaletteHint") }
+    static var colorFavoritesTitle: String { s("colorFavoritesTitle") }
+    static var colorFavoritesEmpty: String { s("colorFavoritesEmpty") }
+    static var colorRecentTitle: String { s("colorRecentTitle") }
+    static var colorRecentEmpty: String { s("colorRecentEmpty") }
+    static var colorCopyAction: String { s("colorCopyAction") }
+    static var colorAddFavorite: String { s("colorAddFavorite") }
+    static var colorRemoveFavorite: String { s("colorRemoveFavorite") }
+    static var pinRestoreInteraction: String { s("pinRestoreInteraction") }
+    static var pinRecoveryUnavailable: String { s("pinRecoveryUnavailable") }
+    static var pinRecoveryHint: String { s("pinRecoveryHint") }
+    static var pinInteractionRestored: String { s("pinInteractionRestored") }
+    static var pinOpacity: String { s("pinOpacity") }
+    static var pinMoreOpaque: String { s("pinMoreOpaque") }
+    static var pinLessOpaque: String { s("pinLessOpaque") }
+    static var pinMousePassthrough: String { s("pinMousePassthrough") }
+    static var colorPickerControls: String { s("colorPickerControls") }
 }

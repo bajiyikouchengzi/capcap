@@ -16,6 +16,11 @@ final class ToolbarSettingsPane: NSView {
     /// immediately, so the settings page has no separate apply step.
     private var workingLayout: ToolbarLayout = Defaults.toolbarLayout.normalized()
 
+    private let iconSizePicker = NSPopUpButton()
+    private let densityPicker = NSPopUpButton()
+    private let iconSizeTitle = ToolbarSettingsPane.sectionTitleLabel()
+    private let densityTitle = ToolbarSettingsPane.sectionTitleLabel()
+    private let sizeHint = ToolbarSettingsPane.hintLabel()
     private let preview = ToolbarLayoutPreviewView()
     private var previewHeightConstraint: NSLayoutConstraint!
     private var primaryGrid: ToolbarSlotGridView!
@@ -81,6 +86,36 @@ final class ToolbarSettingsPane: NSView {
         stack.spacing = 14
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
+
+        let sizeCard = Self.makeCard()
+        let sizeStack = NSStackView()
+        sizeStack.orientation = .vertical
+        sizeStack.alignment = .leading
+        sizeStack.spacing = 12
+        sizeStack.translatesAutoresizingMaskIntoConstraints = false
+        sizeCard.addSubview(sizeStack)
+        NSLayoutConstraint.activate([
+            sizeStack.leadingAnchor.constraint(equalTo: sizeCard.leadingAnchor, constant: 16),
+            sizeStack.trailingAnchor.constraint(equalTo: sizeCard.trailingAnchor, constant: -16),
+            sizeStack.topAnchor.constraint(equalTo: sizeCard.topAnchor, constant: 16),
+            sizeStack.bottomAnchor.constraint(equalTo: sizeCard.bottomAnchor, constant: -16)
+        ])
+        for (label, picker) in [(iconSizeTitle, iconSizePicker), (densityTitle, densityPicker)] {
+            picker.target = self
+            picker.action = #selector(sizeChanged)
+            let spacer = NSView()
+            let row = NSStackView(views: [label, spacer, picker])
+            row.orientation = .horizontal
+            row.alignment = .centerY
+            sizeStack.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: sizeStack.widthAnchor).isActive = true
+        }
+        sizeHint.maximumNumberOfLines = 0
+        sizeHint.lineBreakMode = .byWordWrapping
+        sizeStack.addArrangedSubview(sizeHint)
+        sizeHint.widthAnchor.constraint(equalTo: sizeStack.widthAnchor).isActive = true
+        stack.addArrangedSubview(sizeCard)
+        sizeCard.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
 
         // Preview card.
         let previewCard = Self.makeCard()
@@ -254,7 +289,19 @@ final class ToolbarSettingsPane: NSView {
 
     // MARK: - Actions
 
+    @objc private func sizeChanged() {
+        guard ToolbarSizeOption.allCases.indices.contains(iconSizePicker.indexOfSelectedItem),
+              ToolbarSizeOption.allCases.indices.contains(densityPicker.indexOfSelectedItem) else { return }
+        Defaults.toolbarIconSize = ToolbarSizeOption.allCases[iconSizePicker.indexOfSelectedItem]
+        Defaults.toolbarDensity = ToolbarSizeOption.allCases[densityPicker.indexOfSelectedItem]
+        preview.layout = workingLayout
+        updatePreviewHeight()
+    }
+
     @objc private func resetTapped() {
+        Defaults.toolbarIconSize = .medium
+        Defaults.toolbarDensity = .medium
+        applyLocalizedStrings()
         workingLayout = .default
         syncFromWorkingLayout()
         Defaults.toolbarLayout = workingLayout
@@ -275,6 +322,16 @@ final class ToolbarSettingsPane: NSView {
     }
 
     private func applyLocalizedStrings() {
+        iconSizeTitle.stringValue = L10n.toolbarIconSizeTitle
+        densityTitle.stringValue = L10n.toolbarDensityTitle
+        sizeHint.stringValue = L10n.toolbarSizeHint
+        for picker in [iconSizePicker, densityPicker] {
+            picker.removeAllItems()
+            picker.addItems(withTitles: ToolbarSizeOption.allCases.map(\.title))
+        }
+        iconSizePicker.selectItem(at: ToolbarSizeOption.allCases.firstIndex(of: Defaults.toolbarIconSize) ?? 1)
+        densityPicker.selectItem(at: ToolbarSizeOption.allCases.firstIndex(of: Defaults.toolbarDensity) ?? 1)
+
         primaryTitle.stringValue = L10n.toolbarSettingsPrimaryTitle
         primaryHint.stringValue = L10n.toolbarSettingsPrimaryHint
         sideTitle.stringValue = L10n.toolbarSettingsSideTitle

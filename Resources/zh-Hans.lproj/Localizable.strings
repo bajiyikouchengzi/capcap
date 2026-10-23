@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "重新检查";
 
 "historyFilePreviewUnavailable" = "此文件无法预览";
+
+// Pinned image context menu
+"pinShowShadow" = "显示阴影";
+"pinResetZoom" = "恢复初始大小";
+"pinExportDragHint" = "按住 Option 拖动以导出图片";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "小";
+"sizeMedium" = "中";
+"sizeLarge" = "大";
+"toolbarIconSizeTitle" = "图标大小";
+"toolbarDensityTitle" = "工具栏布局大小";
+"toolbarSizeHint" = "下次截图生效，图标大小和布局疏密可分别调整";
+"colorPaletteTitle" = "色板与取色设置";
+"colorCopyFormat" = "颜色复制格式";
+"colorPaletteHint" = "点击颜色复制，点击星标收藏或移除常用颜色";
+"colorFavoritesTitle" = "收藏色板";
+"colorFavoritesEmpty" = "暂无收藏，点击最近颜色旁的星标添加";
+"colorRecentTitle" = "最近颜色";
+"colorRecentEmpty" = "取色后会在此显示颜色历史";
+"colorCopyAction" = "复制颜色";
+"colorAddFavorite" = "收藏颜色";
+"colorRemoveFavorite" = "取消收藏颜色";
+"pinRestoreInteraction" = "恢复贴图鼠标操作";
+"pinRecoveryUnavailable" = "恢复快捷键被占用，贴图仍保持可操作";
+"pinRecoveryHint" = "已开启鼠标穿透，按 ⌃⌥⌘P 恢复操作";
+"pinInteractionRestored" = "已恢复贴图鼠标操作";
+"pinOpacity" = "不透明度";
+"pinMoreOpaque" = "增加不透明度";
+"pinLessOpaque" = "降低不透明度";
+"pinMousePassthrough" = "鼠标穿透";
+"colorPickerControls" = "方向键逐像素移动 · Return/Enter 确认 · Esc 取消";

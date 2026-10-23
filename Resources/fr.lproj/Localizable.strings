@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "Vérifier à nouveau";
 
 "historyFilePreviewUnavailable" = "Aperçu indisponible pour ce fichier";
+
+// Pinned image context menu
+"pinShowShadow" = "Afficher l’ombre";
+"pinResetZoom" = "Rétablir la taille initiale";
+"pinExportDragHint" = "Maintenir Option et faire glisser pour exporter l’image";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "Petite";
+"sizeMedium" = "Moyenne";
+"sizeLarge" = "Grande";
+"toolbarIconSizeTitle" = "Taille des icônes";
+"toolbarDensityTitle" = "Taille de la disposition";
+"toolbarSizeHint" = "Appliqué à la prochaine capture avec réglages séparés des icônes et des espacements";
+"colorPaletteTitle" = "Palette et sélecteur de couleurs";
+"colorCopyFormat" = "Format de copie des couleurs";
+"colorPaletteHint" = "Cliquez sur une couleur pour la copier ou sur son étoile pour gérer les favoris";
+"colorFavoritesTitle" = "Couleurs favorites";
+"colorFavoritesEmpty" = "Ajoutez une couleur récente avec son étoile";
+"colorRecentTitle" = "Couleurs récentes";
+"colorRecentEmpty" = "Les couleurs conservées dans l’historique apparaissent ici";
+"colorCopyAction" = "Copier la couleur";
+"colorAddFavorite" = "Ajouter aux favoris";
+"colorRemoveFavorite" = "Retirer des favoris";
+"pinRestoreInteraction" = "Rétablir la souris sur les images épinglées";
+"pinRecoveryUnavailable" = "Raccourci de restauration occupé, l’image reste interactive";
+"pinRecoveryHint" = "Souris traversante activée, appuyez sur ⌃⌥⌘P pour rétablir les interactions";
+"pinInteractionRestored" = "Interactions de la souris rétablies";
+"pinOpacity" = "Opacité";
+"pinMoreOpaque" = "Augmenter l’opacité";
+"pinLessOpaque" = "Réduire l’opacité";
+"pinMousePassthrough" = "Souris traversante";
+"colorPickerControls" = "Flèches pour déplacer d’un pixel · Return/Enter pour valider · Esc pour annuler";

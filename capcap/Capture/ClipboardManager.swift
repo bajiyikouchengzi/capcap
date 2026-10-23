@@ -44,12 +44,15 @@ struct ClipboardManager {
         writeTextToClipboard(text, skipHistory: skipHistory)
     }
 
-    static func copyColorToClipboard(hex: String) {
+    @discardableResult
+    static func copyColorToClipboard(hex: String, format: ColorValueFormat? = nil) -> String {
         guard let normalizedHex = ClipboardColorParser.normalizedHex(from: hex) else {
             writeTextToClipboard(hex)
-            return
+            return hex
         }
-        writeTextToClipboard(normalizedHex, skipHistory: true)
+        let value = (format ?? Defaults.colorValueFormat).string(from: normalizedHex)
+        writeTextToClipboard(value, skipHistory: true)
+        return value
     }
 
     static func copyHistoryTextToClipboard(_ text: String) {

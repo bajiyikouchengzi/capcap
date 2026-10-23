@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-23
+
+### Added
+- Resize pinned images proportionally by dragging any of the four corners
+- Adjust pin opacity and enable mouse passthrough, with a global recovery shortcut and menu bar recovery action
+- Configure toolbar icon size and layout size independently with small, medium, and large options
+- Move the color picker one backing pixel at a time with arrow keys and confirm with Return or keypad Enter
+- Choose HEX, RGB, or HSL color copy formats and manage favorite colors from recent color history
+- Show shortcuts in pin context menus and toolbar tips, with keyboard guidance while picking colors
+
+### Changed
+- Replace the pinned-image floating toolbar with a native context menu, including a shadow toggle
+- Keep corner resize cursors without drawing corner markers over pinned images
+- Support Option-drag to export a pinned image to other apps
+- Use 15-point toolbar icons by default
+- Check for application updates from bajiyikouchengzi/capcap
+- Localize all new controls and hints in eight languages
+
 ## [1.7.22] - 2026-10-16
 
 ### Added

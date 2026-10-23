@@ -754,3 +754,35 @@
 "historyFilePreviewRetry" = "再確認";
 
 "historyFilePreviewUnavailable" = "このファイルはプレビューできません";
+
+// Pinned image context menu
+"pinShowShadow" = "影を表示";
+"pinResetZoom" = "初期サイズに戻す";
+"pinExportDragHint" = "Option を押しながらドラッグして画像を書き出す";
+
+// Toolbar sizing, pin interaction and color palette
+"sizeSmall" = "小";
+"sizeMedium" = "中";
+"sizeLarge" = "大";
+"toolbarIconSizeTitle" = "アイコンのサイズ";
+"toolbarDensityTitle" = "ツールバーの配置サイズ";
+"toolbarSizeHint" = "次回の撮影から適用し、アイコンと間隔を個別に調整";
+"colorPaletteTitle" = "カラーパレットとスポイト設定";
+"colorCopyFormat" = "色のコピー形式";
+"colorPaletteHint" = "色をクリックしてコピー、星でお気に入りを管理";
+"colorFavoritesTitle" = "お気に入りの色";
+"colorFavoritesEmpty" = "最近の色の星をクリックして追加";
+"colorRecentTitle" = "最近の色";
+"colorRecentEmpty" = "履歴に保存した色をここに表示";
+"colorCopyAction" = "色をコピー";
+"colorAddFavorite" = "色をお気に入りに追加";
+"colorRemoveFavorite" = "お気に入りから色を削除";
+"pinRestoreInteraction" = "ピン画像のマウス操作を復元";
+"pinRecoveryUnavailable" = "復元キーが使用中のため、画像の操作を維持";
+"pinRecoveryHint" = "マウス透過を有効化、⌃⌥⌘P で操作を復元";
+"pinInteractionRestored" = "ピン画像のマウス操作を復元しました";
+"pinOpacity" = "不透明度";
+"pinMoreOpaque" = "不透明度を上げる";
+"pinLessOpaque" = "不透明度を下げる";
+"pinMousePassthrough" = "マウス透過";
+"colorPickerControls" = "矢印キーで1ピクセル移動 · Return/Enter で確定 · Esc で中止";

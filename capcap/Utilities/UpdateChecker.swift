@@ -37,7 +37,7 @@ extension Notification.Name {
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
-    private let repo = "realskyrin/capcap"
+    private let repo = "bajiyikouchengzi/capcap"
     private let throttleKey = "lastUpdateCheckAt"
     private let skippedVersionKey = "skippedUpdateVersion"
     private let shortcutTriggerDayKey = "automaticUpdateCheckShortcutTriggerDay"
