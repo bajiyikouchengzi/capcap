@@ -34,9 +34,11 @@ if [ "$UNIVERSAL" = "1" ]; then
     echo "Building capcap ($CONFIG, universal: arm64 + x86_64)..."
     swift build -c "$CONFIG" --arch arm64 --arch x86_64
     # SwiftPM emits the merged universal binary under .build/apple/Products/<Config>/
-    CONFIG_CAP="$(tr '[:lower:]' '[:upper:]' <<< "${CONFIG:0:1}")${CONFIG:1}"
-    BUILD_BIN=".build/apple/Products/$CONFIG_CAP/capcap"
-    EXTENSION_BUILD_BIN=".build/apple/Products/$CONFIG_CAP/$EXTENSION_PRODUCT_NAME"
+    # Ask SwiftPM for its output directory rather than assuming the build
+    # backend uses .build/apple (newer toolchains may use .build/out).
+    PRODUCT_DIR="$(swift build -c "$CONFIG" --arch arm64 --arch x86_64 --show-bin-path)"
+    BUILD_BIN="$PRODUCT_DIR/capcap"
+    EXTENSION_BUILD_BIN="$PRODUCT_DIR/$EXTENSION_PRODUCT_NAME"
     if [ ! -f "$BUILD_BIN" ] || [ ! -f "$EXTENSION_BUILD_BIN" ]; then
         # Fallback: merge per-arch binaries with lipo
         ARM_BIN=".build/arm64-apple-macosx/$CONFIG/capcap"
@@ -61,8 +63,9 @@ if [ "$UNIVERSAL" = "1" ]; then
 else
     echo "Building capcap ($CONFIG, host arch only)..."
     swift build -c "$CONFIG"
-    BUILD_BIN=".build/$CONFIG/capcap"
-    EXTENSION_BUILD_BIN=".build/$CONFIG/$EXTENSION_PRODUCT_NAME"
+    PRODUCT_DIR="$(swift build -c "$CONFIG" --show-bin-path)"
+    BUILD_BIN="$PRODUCT_DIR/capcap"
+    EXTENSION_BUILD_BIN="$PRODUCT_DIR/$EXTENSION_PRODUCT_NAME"
 fi
 
 if [ ! -f "$BUILD_BIN" ]; then

@@ -72,11 +72,7 @@ jobs:
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           APP_NAME="capcap"
-          BUILD_DIR=".build/apple/Products/Release"
-          # Fallback if universal build path differs
-          if [ ! -f "$BUILD_DIR/$APP_NAME" ]; then
-            BUILD_DIR=".build/release"
-          fi
+          BUILD_DIR="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
 
           APP_DIR="build/${APP_NAME}.app"
           CONTENTS="$APP_DIR/Contents"

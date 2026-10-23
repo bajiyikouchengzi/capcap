@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Choose HEX, RGB, or HSL color copy formats and manage favorite colors from recent color history
 - Show shortcuts in pin context menus and toolbar tips, with keyboard guidance while picking colors
 
+### Fixed
+- Locate SwiftPM products using the active toolchain output path during local and CI packaging
+
 ### Changed
 - Replace the pinned-image floating toolbar with a native context menu, including a shadow toggle
 - Keep corner resize cursors without drawing corner markers over pinned images
